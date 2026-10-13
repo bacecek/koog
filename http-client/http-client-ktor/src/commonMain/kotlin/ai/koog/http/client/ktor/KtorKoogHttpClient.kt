@@ -19,6 +19,7 @@ import io.ktor.client.plugins.sse.sse
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
@@ -32,7 +33,6 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.URLBuilder
 import io.ktor.http.contentType
 import io.ktor.http.encodedPath
-import io.ktor.http.headers
 import io.ktor.http.isSuccess
 import io.ktor.http.takeFrom
 import io.ktor.serialization.kotlinx.json.json
@@ -41,6 +41,7 @@ import io.ktor.utils.io.CancellationException
 import io.ktor.utils.io.readUTF8Line
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -229,7 +230,7 @@ public class KtorKoogHttpClient internal constructor(
         requestBodyType: KClass<T>,
         parameters: Map<String, String>,
         headers: Map<String, String>,
-    ): Flow<String> = flow {
+    ): Flow<String> = channelFlow {
         logger.debug { "Opening lines flow for $clientName" }
 
         try {
@@ -257,7 +258,7 @@ public class KtorKoogHttpClient internal constructor(
                 while (!channel.isClosedForRead) {
                     val line = channel.readUTF8Line() ?: break
                     if (line.isBlank()) continue
-                    emit(line)
+                    send(line)
                 }
             }
         } catch (e: KoogHttpClientException) {
